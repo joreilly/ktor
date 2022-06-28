@@ -14,7 +14,6 @@ import io.ktor.server.testing.client.*
 import io.ktor.server.testing.internal.*
 import io.ktor.util.*
 import io.ktor.util.pipeline.*
-import io.ktor.utils.io.concurrent.*
 import io.ktor.utils.io.core.*
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
@@ -175,7 +174,20 @@ class TestApplicationEngine(
         closeRequest: Boolean = true,
         setup: TestApplicationRequest.() -> Unit
     ): TestApplicationCall {
-        val job = Job()
+        val callJob = GlobalScope.async(coroutineContext) {
+            handleRequestNonBlocking(closeRequest, setup)
+        }
+
+        return runBlocking(coroutineContext) {
+            callJob.await()
+        }
+    }
+
+    internal suspend fun handleRequestNonBlocking(
+        closeRequest: Boolean = true,
+        setup: TestApplicationRequest.() -> Unit
+    ): TestApplicationCall {
+        val job = Job(testEngineJob)
         val call = createCall(
             readResponse = true,
             closeRequest = closeRequest,
@@ -183,16 +195,12 @@ class TestApplicationEngine(
             context = Dispatchers.IOBridge + job
         )
 
-        val context = configuration.dispatcher + SupervisorJob() + CoroutineName("request") + job
-        val pipelineJob = GlobalScope.async(context) {
+        val context = configuration.dispatcher + SupervisorJob(job) + CoroutineName("request")
+        withContext(context) {
             pipeline.execute(call)
-        }
-
-        runBlocking(coroutineContext) {
-            pipelineJob.await()
             call.response.awaitForResponseCompletion()
-            context.cancel()
         }
+        context.cancel()
         processResponse(call)
 
         return call

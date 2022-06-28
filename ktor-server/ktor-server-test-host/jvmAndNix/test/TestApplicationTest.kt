@@ -8,7 +8,6 @@ import io.ktor.client.*
 import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
-import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.*
 import io.ktor.server.response.*
@@ -188,5 +187,25 @@ class TestApplicationTest {
         }
 
         assertEquals("OK", client.get("/").bodyAsText())
+    }
+
+    @Test
+    fun testMultipleParallelRequests() = testApplication {
+        routing {
+            get("/") {
+                call.respondText("OK")
+            }
+        }
+
+        coroutineScope {
+            val jobs = (1..100).map {
+                async {
+                    client.get("/").apply {
+                        assertEquals("OK", bodyAsText())
+                    }
+                }
+            }
+            jobs.forEach { it.join() }
+        }
     }
 }

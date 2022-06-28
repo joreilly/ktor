@@ -14,8 +14,8 @@ import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
-import kotlinx.coroutines.*
 import java.io.*
+import kotlinx.coroutines.*
 import kotlin.coroutines.*
 import kotlin.test.*
 import io.ktor.client.plugins.websocket.WebSockets as ClientWebSockets
@@ -172,6 +172,31 @@ class TestApplicationTestJvm {
         client.get("/")
         Thread.sleep(3000)
         assertNull(error)
+    }
+
+    @Test
+    fun testMultipleParallelWebSocketsRequests() = testApplication {
+        install(WebSockets)
+        routing {
+            webSocket("/") {
+                send(incoming.receive())
+            }
+        }
+
+        val client = createClient {
+            install(ClientWebSockets)
+        }
+        coroutineScope {
+            val jobs = (1..100).map {
+                async {
+                    client.ws("/") {
+                        send(Frame.Text("test"))
+                        assertEquals("test", (incoming.receive() as Frame.Text).readText())
+                    }
+                }
+            }
+            jobs.forEach { it.join() }
+        }
     }
 
     public fun Application.module() {
