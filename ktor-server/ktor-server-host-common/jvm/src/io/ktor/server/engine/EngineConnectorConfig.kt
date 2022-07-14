@@ -76,6 +76,12 @@ public interface EngineSSLConnectorConfig : EngineConnectorConfig {
      * Private key password provider
      */
     public val privateKeyPassword: () -> CharArray
+
+
+    /**
+     *  Enabled protocol versions
+     */
+    public val enabledProtocols: List<String>?
 }
 
 /**
@@ -122,4 +128,5 @@ public class EngineSSLConnectorBuilder(
     override val privateKeyPassword: () -> CharArray
 ) : EngineConnectorBuilder(ConnectorType.HTTPS), EngineSSLConnectorConfig {
     override var keyStorePath: File? = null
+    override var enabledProtocols: List<String>? = null
 }

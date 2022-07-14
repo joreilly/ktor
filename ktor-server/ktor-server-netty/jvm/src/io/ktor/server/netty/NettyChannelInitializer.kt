@@ -78,7 +78,12 @@ public class NettyChannelInitializer(
     override fun initChannel(ch: SocketChannel) {
         with(ch.pipeline()) {
             if (connector is EngineSSLConnectorConfig) {
-                addLast("ssl", sslContext!!.newHandler(ch.alloc()))
+                val sslEngine = sslContext!!.newEngine(ch.alloc()).apply {
+                    connector.enabledProtocols?.let {
+                        enabledProtocols = it.toTypedArray()
+                    }
+                }
+                addLast("ssl", SslHandler(sslEngine))
 
                 if (alpnProvider != null) {
                     addLast(NegotiatedPipelineInitializer())
