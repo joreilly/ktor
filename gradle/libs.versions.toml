@@ -39,7 +39,7 @@ mokito-kotlin-version = "1.6.0"
 
 java-jwt-version = "3.19.2"
 jwks-rsa-version = "0.17.0"
-mustache-version = "0.9.10"
+mustache-version = "0.9.13"
 freemarker-version = "2.3.31"
 pebble-version = "3.1.5"
 velocity-version = "2.3"
