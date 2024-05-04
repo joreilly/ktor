@@ -32,7 +32,7 @@ dropwizard-version = "4.2.10"
 micrometer-version = "1.7.5"
 
 jansi-version = "2.4.0"
-typesafe-version = "1.4.2"
+typesafe-version = "1.4.3"
 
 mockk-version = "1.12.4"
 mokito-kotlin-version = "1.6.0"
